@@ -1,10 +1,10 @@
-import { Event, EventHint } from '@sentry/types'
 import axios from 'axios'
 import { format } from 'date-fns'
+import { getEnvOrDie } from './env'
+import { saveMemberCount } from './saveMemberCount'
+import { enableSentryIfPossible } from './sentry'
 
-const fs = require('fs')
 const debug = require('debug')('slack-members')
-const sentry = require('@sentry/node')
 
 interface GetMemberResponse {
   readonly members: ReadonlyArray<Member>
@@ -63,39 +63,15 @@ const getMemberCount = async (oauthAccessToken: string): Promise<number> => {
   return memberCount
 }
 
-const saveMemberCount = async (
-  file: string,
-  date: string,
-  count: number,
-): Promise<void> =>
-  await fs.promises.appendFile(file, [date, count].join(',') + '\n')
-
 const main = async () => {
-  const oauthAccessToken = process.env.SLACK_OAUTH_ACCESS_TOKEN
-  if (!oauthAccessToken) {
-    throw new Error('Environment variable SLACK_OAUTH_ACCESS_TOKEN is missing')
-  }
-  const file = process.env.SLACK_MEMBER_COUNT_FILE
-  if (!file) {
-    throw new Error('Environment variable SLACK_MEMBER_COUNT_FILE is missing')
-  }
-  const sentryDsn = process.env.SENTRY_DSN
-  if (sentryDsn) {
-    sentry.init({
-      dsn: sentryDsn,
-      beforeSend(event: Event, hint?: EventHint) {
-        if (hint && hint.originalException) {
-          console.error(hint.originalException)
-        }
-        return event
-      },
-    })
-  }
-
+  const oauthAccessToken = getEnvOrDie('SLACK_OAUTH_ACCESS_TOKEN')
+  const file = getEnvOrDie('SLACK_MEMBER_COUNT_FILE')
+  enableSentryIfPossible()
   const memberCount = await getMemberCount(oauthAccessToken)
   const today = format(new Date(), 'yyyy-MM-dd')
   debug(`today=${today} memberCount=${memberCount}`)
   await saveMemberCount(file, today, memberCount)
+  debug(`written data to ${file}`)
 }
 
 main().then()
