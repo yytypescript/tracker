@@ -1,0 +1,18 @@
+version: '2'
+
+services:
+  app:
+    build: .
+    command: sh -c 'yarn && go-cron -s "0 0 0,6,12,18 * * *" -- yarn run:track-slack-member-count'
+    environment:
+      DEBUG: slack-members
+      SLACK_OAUTH_ACCESS_TOKEN: ${SLACK_OAUTH_ACCESS_TOKEN}
+      SLACK_MEMBER_COUNT_FILE: /app/slack-member-count.csv
+      SENTRY_DSN: ${SENTRY_DSN}
+    volumes:
+      - ".:/app"
+    restart: always
+    logging:
+      options:
+        max-size: 10k
+        max-file: "5"
