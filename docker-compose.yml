@@ -11,7 +11,7 @@ services:
   slack-member-count:
     build: .
     command: go-cron -s "0 0 0,9,12,21 * * *" -- yarn run:track-slack-member-count
-#    command: go-cron -s "0 * * * * *" -- yarn run:track-slack-member-count
+    #    command: go-cron -s "0 * * * * *" -- yarn run:track-slack-member-count
     environment:
       DEBUG: slack-members
       SLACK_OAUTH_ACCESS_TOKEN: ${SLACK_OAUTH_ACCESS_TOKEN}
@@ -28,11 +28,53 @@ services:
   connpass-member-count:
     build: .
     command: go-cron -s "0 0 0,9,12,21 * * *" -- yarn run:track-connpass-member-count
-#    command: go-cron -s "0 * * * * *" -- yarn run:track-connpass-member-count
+    #    command: go-cron -s "0 * * * * *" -- yarn run:track-connpass-member-count
     environment:
       DEBUG: connpass-members
       CONNPASS_GROUP_URL: ${CONNPASS_GROUP_URL}
       CONNPASS_MEMBER_COUNT_FILE: /app/connpass-member-count.csv
+      SENTRY_DSN: ${SENTRY_DSN}
+    volumes:
+      - ".:/app"
+    depends_on:
+      - init
+    restart: always
+    logging:
+      options:
+        max-size: 10k
+        max-file: "5"
+
+  upload-slack-member-count-chart:
+    build: .
+    command: go-cron -s "0 0 0,9,12,21 * * *" -- yarn run:uploadChart --key=stats/slack-member-count.png --csv=slack-member-count.csv --title=Slackメンバー数
+#    command: go-cron -s "0 * * * * *" -- yarn run:uploadChart --key=stats/slack-member-count.png --csv=slack-member-count.csv --title=Slackメンバー数
+    environment:
+      DEBUG: upload-chart
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_S3_REGION: ${AWS_S3_REGION}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET}
+      SENTRY_DSN: ${SENTRY_DSN}
+    volumes:
+      - ".:/app"
+    depends_on:
+      - init
+    restart: always
+    logging:
+      options:
+        max-size: 10k
+        max-file: "5"
+
+  upload-connpass-member-count-chart:
+    build: .
+    command: go-cron -s "0 0 0,9,12,21 * * *" -- yarn run:uploadChart --key=stats/connpass-member-count.png --csv=connpass-member-count.csv --title=Connpassメンバー数
+#    command: go-cron -s "0 * * * * *" -- yarn run:uploadChart --key=stats/connpass-member-count.png --csv=connpass-member-count.csv --title=Connpassメンバー数
+    environment:
+      DEBUG: upload-chart
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_S3_REGION: ${AWS_S3_REGION}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET}
       SENTRY_DSN: ${SENTRY_DSN}
     volumes:
       - ".:/app"

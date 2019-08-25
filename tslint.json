@@ -16,7 +16,8 @@
     "quotemark": [true, "single", "jsx-double"],
     "variable-name": [true, "allow-leading-underscore"],
     "no-var-requires": false,
-    "no-console": false
+    "no-console": false,
+    "max-classes-per-file": false
   },
   "rulesDirectory": []
 }
