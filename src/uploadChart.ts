@@ -10,20 +10,23 @@ import { enableSentryIfPossible } from './sentry'
 const debug = require('debug')('upload-chart')
 
 class Data {
-  private readonly _dates: Date[] = []
-  private readonly _memberCounts: number[] = []
+  private readonly dateMemberCount: Array<[Date, number]> = []
+  private readonly knownDates: string[] = []
 
   get dates(): ReadonlyArray<Date> {
-    return this._dates
+    return this.dateMemberCount.map(([date]) => date)
   }
 
   get memberCounts(): ReadonlyArray<number> {
-    return this._memberCounts
+    return this.dateMemberCount.map(([, memberCount]) => memberCount)
   }
 
   add(date: Date, memberCount: number): void {
-    this._dates.push(date)
-    this._memberCounts.push(memberCount)
+    const _date = format(date, 'yyyy-MM-dd')
+    if (!this.knownDates.includes(_date)) {
+      this.dateMemberCount.push([date, memberCount])
+      this.knownDates.push(_date)
+    }
   }
 }
 
